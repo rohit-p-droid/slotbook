@@ -1,14 +1,18 @@
 FROM node:22-alpine AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Install libc6-compat for Next.js swc on alpine
+RUN apk add --no-cache libc6-compat
+RUN npm install -g pnpm@10
 
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile || pnpm install
+# Install dependencies using pinned pnpm 10
+COPY .npmrc* package.json pnpm-lock.yaml* ./
+RUN pnpm install
 
-# Build stage
+# Copy source and build
 COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm run build
 
 EXPOSE 3000
